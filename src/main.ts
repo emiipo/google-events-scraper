@@ -34,7 +34,7 @@ const crawler = new PlaywrightCrawler({
 
             //Links handling
             let links = [];
-            const linkLocators = await evnt.locator('.SKIyM').all();
+            const linkLocators = await evnt.locator('div[jsname="CzizI"]').locator('.SKIyM').all();
             for (const lnk of linkLocators) {
                 const link = {
                     name: await lnk.locator('.NLMF7b span').textContent(),
