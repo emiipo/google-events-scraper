@@ -21,9 +21,13 @@ const crawler = new PlaywrightCrawler({
         await playwrightUtils.infiniteScroll(page);
 
         //Scrape the content
-        const events = await page.locator('.voohof').all();
+        const events = await page.locator('div[jsname="qlMead"]').all();
+        for(const evnt of events){
+            const name = await evnt.locator('div[jsname="r4nke"]').textContent();
+            log.info(`${name}`);
+        }
     },
     headless: false,
 });
 
-await crawler.run(['https://www.google.com/search?q=events&ibp=htl;events']);
+await crawler.run(['https://www.google.com/search?q=google+events&ibp=htl;events']);
