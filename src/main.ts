@@ -16,6 +16,7 @@ const crawler = new PlaywrightCrawler({
         const title = await page.title();
         log.info(`The title of the page is: ${ title }`)
     },
+    headless: false,
 });
 
 await crawler.run(['https://www.google.com/search?q=events&ibp=htl;events']);
