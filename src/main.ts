@@ -1,12 +1,21 @@
-// For more information, see https://crawlee.dev/
-import { PlaywrightCrawler, ProxyConfiguration } from 'crawlee';
-import { router } from './routes.js';
-
-const startUrls = ['https://crawlee.dev'];
+import { PlaywrightCrawler } from 'crawlee';
 
 const crawler = new PlaywrightCrawler({
-    // proxyConfiguration: new ProxyConfiguration({ proxyUrls: ['...'] }),
-    requestHandler: router,
+    preNavigationHooks: [
+        async (crawlingContext) => {
+            //This cookie is required incase google asks for cookie consent and obstructs you from viewing the rest of the info
+            await crawlingContext.page.context().addCookies([{
+                name: 'CONSENT',
+                value: 'YES+',
+                domain: 'www.google.com',
+                path: '/',
+            }])
+        },
+    ],
+    async requestHandler({ page, log }){
+        const title = await page.title();
+        log.info(`The title of the page is: ${ title }`)
+    },
 });
 
-await crawler.run(startUrls);
+await crawler.run(['https://www.google.com/search?q=events&ibp=htl;events']);
