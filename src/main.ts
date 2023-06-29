@@ -1,6 +1,8 @@
 import { PlaywrightCrawler, playwrightUtils } from 'crawlee';
 
 const timezones = ['UTC', 'ANAT', 'SBT', 'AEST', 'JST', 'CST', 'WIB', 'BST', 'UZT', 'GST', 'EEST', 'CEST', 'BST', 'GMT', 'CVT', 'WGST', 'ART', 'EDT', 'CDT', 'CST', 'PDT', 'AKDT', 'HDT', 'HST', 'NUT', 'AoE', 'LINT', 'TOT', 'LHST', 'ACST', 'MMT', 'IST', 'AFT', 'IRST', 'NDT', 'MART', 'CHAST', 'ACWST', 'NPT'];
+const weekDays = new Map<string, string>([['Mon','Monday'], ['Tue','Tuesday'], ['Wed','Wednesday'], ['Thu','Thursday'], ['Fri','Friday'], ['Sat','Saturday'], ['Sun','Sunday']]);
+const months = new Map<string, number>([['Jan',1], ['Feb',2], ['Mar',3], ['Apr',4], ['May',5], ['Jun',6], ['Jul',7], ['Aug',8], ['Sep',9], ['Oct', 10], ['Nov', 11], ['Dec', 12]]);
 
 const crawler = new PlaywrightCrawler({
     preNavigationHooks: [
@@ -14,7 +16,7 @@ const crawler = new PlaywrightCrawler({
             }])
         },
     ],
-    async requestHandler({ page, log }){
+    async requestHandler({ page }){
         //Load all the content
         const eventsContainter = await page.locator('div[jsname="CaV2mb"]');
         const containerBox = await eventsContainter.boundingBox();
@@ -38,7 +40,9 @@ const crawler = new PlaywrightCrawler({
             }
 
             //Date & time handling
+            const dateObj = new Date();
             let dateString = await evnt.locator('.Gkoz3').textContent();
+
             let timezone = '';
             for(const zone of timezones){
                 if(dateString?.includes(zone)){
@@ -46,8 +50,89 @@ const crawler = new PlaywrightCrawler({
                     dateString = dateString.slice(0, -timezone.length-1);
                 }
             }
+            let splitString = dateString!.split('–');
+            if(splitString[0].charAt(splitString[0].length-1) === ' '){
+                splitString[0] = splitString[0].slice(0, -1);
+            }
+            if (splitString.length === 2){
+                if(splitString[1].charAt(0) === ' '){
+                    splitString[1] = splitString[1].slice(1, splitString[1].length);
+                }
+            }
+
+            const timeRegex = new RegExp(/([0-9])\d:([0-9])\d/);
+            let startTime = '';
+            let regResult = timeRegex.exec(splitString[0]);
+            if (regResult !== null){
+                startTime = regResult[0];
+                splitString[0] = splitString![0].slice(0, -startTime.length-1);
+                if(splitString[0].charAt(splitString[0].length-1) === ' '){
+                    splitString[0] = splitString[0].slice(0, -1);
+                }
+            }
+
+            let endTime = '';
+            regResult = timeRegex.exec(splitString[1]);
+            if (regResult !== null && splitString.length === 2){
+                endTime = regResult[0];
+                splitString[1] = splitString[1].slice(0, -endTime.length-1);
+                if(splitString[1].charAt(splitString[1].length-1) === ' '){
+                splitString[1] = splitString[1].slice(0, -1);
+                }
+            }
+
+            if(splitString[0].charAt(splitString[0].length-1) === ','){
+                splitString[0] = splitString[0].slice(0, -1);
+            }
+            if(splitString.length === 2 && splitString[1].charAt(splitString[1].length-1) === ','){
+                splitString[1] = splitString[1].slice(0, -1);
+            }
+
+            let splitDate = splitString![0].split(',');
+            const startDay = splitDate.length === 2? weekDays.get(splitDate[0]) : '';
+            const yearRegex = new RegExp(/([0-9]){4}/);
+            let startDate = splitDate[splitDate.length - 1];
+            if(startDate.charAt(0) === ' '){
+                startDate = startDate.slice(1, startDate.length);
+            }
+            let year = dateObj.getFullYear();
+            regResult = yearRegex.exec(startDate);
+            if (regResult !== null){
+                year = Number(regResult[0]);
+                startDate = startDate.slice(0, -year.toString().length-1);
+                if(startDate.charAt(startDate.length-1) === ' '){
+                    startDate = startDate.slice(0, -1);
+                }
+            }
+            if((months.get(startDate.split(' ')[1])! < dateObj.getMonth()+1) || (months.get(startDate.split(' ')[1])! === dateObj.getMonth()+1 && Number(startDate.split(' ')[0]) < dateObj.getDate())){
+                year = dateObj.getFullYear() + 1;
+            }
+            const finalStartDate = new Date(year, months.get(startDate.split(' ')[1])!, Number(startDate.split(' ')[0]), Number(startTime.split(':')[0]), Number(startTime.split(':')[1])).getTime();
+
+            let endDay:string|undefined = '';
+            let endDate:string|undefined = '';
+            if (splitString[1] !== '' && splitString.length === 2){
+                splitDate = splitString![1].split(',');
+                if(splitDate[0].charAt(0) === ' '){
+                    splitDate[0] = splitDate[0].slice(1, splitDate.length);
+                }
+                console.log(splitDate);
+                endDay = splitDate.length === 2? weekDays.get(splitDate[0]) : '';
+                endDate = splitDate[splitDate.length - 1];
+                if(endDate.charAt(0) === ' '){
+                    endDate = endDate.slice(1, startDate.length);
+                }
+                const finalEndDate = new Date(year, months.get(startDate.split(' ')[1])!, Number(startDate.split(' ')[0]), Number(startTime.split(':')[0]), Number(startTime.split(':')[1])).getTime();
+            }
+
             const date = {
-                date: dateString,
+                year: year,
+                startDate: finalStartDate,
+                endDate: endDate,
+                startDay: startDay,
+                endDay: endDay,
+                startTime: startTime,
+                endTime: endTime,
                 timezone: timezone,
                 when: await evnt.locator('.yZX6Sd').textContent(),
             }
