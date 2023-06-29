@@ -35,7 +35,15 @@ const crawler = new PlaywrightCrawler({
                 desc = await descLocator.textContent();
             }
 
-            const mapUrl = await evnt.locator('.ozQmAd').getAttribute('data-url');
+            //Location handling
+            const lineOne = await evnt.locator('.n3VjZe').textContent();
+            const lineTwo = await evnt.locator('.U6txu').textContent();
+            const mapUrl = 'https://google.com' + await evnt.locator('.ozQmAd').getAttribute('data-url');
+            const location = {
+                name: lineTwo === ''? '' : lineOne,
+                address: lineTwo === ''? lineOne : lineTwo,
+                mapUrl: mapUrl,
+            }
 
             //Link handling
             let links = [];
@@ -57,7 +65,7 @@ const crawler = new PlaywrightCrawler({
                 location: {
                     addressMain: await evnt.locator('.n3VjZe').textContent(),
                     addressSecondary: await evnt.locator('.U6txu').textContent(),
-                    mapUrl: 'https://google.com' + mapUrl,
+                    mapUrl: location,
                 },
                 links: links,
             }
