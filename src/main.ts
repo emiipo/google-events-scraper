@@ -37,7 +37,7 @@ const crawler = new PlaywrightCrawler({
 
             const mapUrl = await evnt.locator('.ozQmAd').getAttribute('data-url');
 
-            //Links handling
+            //Link handling
             let links = [];
             const linkLocators = await evnt.locator('div[jsname="CzizI"]').locator('.SKIyM').all();
             for (const lnk of linkLocators) {
@@ -48,6 +48,7 @@ const crawler = new PlaywrightCrawler({
                 links.push(link);
             }
 
+            //Results
             const results = {
                 name: await evnt.locator('div[jsname="r4nke"]').textContent(),
                 description: desc,
