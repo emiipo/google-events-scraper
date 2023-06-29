@@ -1,8 +1,68 @@
 import { PlaywrightCrawler, playwrightUtils } from 'crawlee';
 
 const timezones = ['UTC', 'ANAT', 'SBT', 'AEST', 'JST', 'CST', 'WIB', 'BST', 'UZT', 'GST', 'EEST', 'CEST', 'BST', 'GMT', 'CVT', 'WGST', 'ART', 'EDT', 'CDT', 'CST', 'PDT', 'AKDT', 'HDT', 'HST', 'NUT', 'AoE', 'LINT', 'TOT', 'LHST', 'ACST', 'MMT', 'IST', 'AFT', 'IRST', 'NDT', 'MART', 'CHAST', 'ACWST', 'NPT'];
-const weekDays = new Map<string, string>([['Mon','Monday'], ['Tue','Tuesday'], ['Wed','Wednesday'], ['Thu','Thursday'], ['Fri','Friday'], ['Sat','Saturday'], ['Sun','Sunday']]);
 const months = new Map<string, number>([['Jan',1], ['Feb',2], ['Mar',3], ['Apr',4], ['May',5], ['Jun',6], ['Jul',7], ['Aug',8], ['Sep',9], ['Oct', 10], ['Nov', 11], ['Dec', 12]]);
+
+function RemoveChar(str:string, char:string, first?:boolean):string {
+    let index = str.length-1;
+    let x = 0;
+    let y = -1;
+    if (first){
+       index = 0;
+       x = 1;
+       y = str.length;
+    }
+    if(str.charAt(index) === char){
+        str = str.slice(x, y);
+    }
+    return str;
+}
+//The strings are very unpredictable with the characters they use, so it's better to just run them trough this every time to make sure they're properly formatted
+function RemoveSpaces(str:string):string {
+    str = RemoveChar(str, ' ');
+    str = RemoveChar(str, ' ', true);
+    str = RemoveChar(str, ' ');
+    str = RemoveChar(str, ' ', true);
+    return str;
+}
+
+//Date & time functions to speed things up
+function GetTime(str:string):{hour:number, min:number, str:string} {
+    const timeRegex = new RegExp(/([0-9])\d:([0-9])\d/);
+    let hour = -1;
+    let min = -1;
+    const regResult = timeRegex.exec(str);
+    if (regResult !== null){
+        str = str.slice(0, -regResult[0].length);
+        str = RemoveSpaces(str);
+        hour = Number((regResult[0].split(':'))[0]);
+        min = Number((regResult[0].split(':'))[1]);
+    }
+    return {
+        hour: hour,
+        min: min,
+        str: str,
+    }
+}
+
+function GetDay(str:string):{day:number, str:string} {
+    let day = -1;
+    const dayRegex = new RegExp(/([0-9]){1,2}/);
+    const regResult = dayRegex.exec(str);
+    if (regResult !== null){
+        day = Number(regResult[0]);
+        if (regResult.index === 0) {
+            str = str.slice(regResult[0].length,str.length);
+        } else {
+            str = str.slice(0, -regResult[0].length);
+        }
+        str = RemoveSpaces(str);
+    }
+    return {
+        day: day,
+        str: str,
+    };
+}
 
 const crawler = new PlaywrightCrawler({
     preNavigationHooks: [
@@ -27,6 +87,7 @@ const crawler = new PlaywrightCrawler({
         //Scrape the content
         const events = await page.locator('.voohof li').all();
         for(const event of events){
+            console.log('--------------------');
             //Click on the event and load the data(this is mainly needed to get image URL's)
             await event.click();
             const id = await event.getAttribute('data-encoded-docid');
@@ -47,95 +108,94 @@ const crawler = new PlaywrightCrawler({
             for(const zone of timezones){
                 if(dateString?.includes(zone)){
                     timezone = dateString.substring(dateString.indexOf(zone));
-                    dateString = dateString.slice(0, -timezone.length-1);
+                    dateString = dateString.slice(0, -timezone.length);
                 }
             }
+            dateString = RemoveSpaces(dateString!);
+
             let splitString = dateString!.split('–');
-            if(splitString[0].charAt(splitString[0].length-1) === ' '){
-                splitString[0] = splitString[0].slice(0, -1);
-            }
-            if (splitString.length === 2){
-                if(splitString[1].charAt(0) === ' '){
-                    splitString[1] = splitString[1].slice(1, splitString[1].length);
-                }
-            }
+            //First half
+            splitString[0] = RemoveSpaces(splitString[0]);
 
-            const timeRegex = new RegExp(/([0-9])\d:([0-9])\d/);
-            let startTime = '';
-            let regResult = timeRegex.exec(splitString[0]);
-            if (regResult !== null){
-                startTime = regResult[0];
-                splitString[0] = splitString![0].slice(0, -startTime.length-1);
-                if(splitString[0].charAt(splitString[0].length-1) === ' '){
-                    splitString[0] = splitString[0].slice(0, -1);
-                }
-            }
+            const timeRes = GetTime(splitString[0]);
+            let startHour = timeRes.hour;
+            let startMin = timeRes.min;
+            splitString[0] = timeRes.str;
 
-            let endTime = '';
-            regResult = timeRegex.exec(splitString[1]);
-            if (regResult !== null && splitString.length === 2){
-                endTime = regResult[0];
-                splitString[1] = splitString[1].slice(0, -endTime.length-1);
-                if(splitString[1].charAt(splitString[1].length-1) === ' '){
-                splitString[1] = splitString[1].slice(0, -1);
-                }
-            }
-
-            if(splitString[0].charAt(splitString[0].length-1) === ','){
-                splitString[0] = splitString[0].slice(0, -1);
-            }
-            if(splitString.length === 2 && splitString[1].charAt(splitString[1].length-1) === ','){
-                splitString[1] = splitString[1].slice(0, -1);
-            }
+            splitString[0] = RemoveChar(splitString[0], ',');
 
             let splitDate = splitString![0].split(',');
-            const startDay = splitDate.length === 2? weekDays.get(splitDate[0]) : '';
+            for (const i in splitDate) splitDate[i] = RemoveSpaces(splitDate[i]);
+            
             const yearRegex = new RegExp(/([0-9]){4}/);
             let startDate = splitDate[splitDate.length - 1];
-            if(startDate.charAt(0) === ' '){
-                startDate = startDate.slice(1, startDate.length);
-            }
             let year = dateObj.getFullYear();
-            regResult = yearRegex.exec(startDate);
+            let regResult = yearRegex.exec(startDate);
             if (regResult !== null){
                 year = Number(regResult[0]);
-                startDate = startDate.slice(0, -year.toString().length-1);
-                if(startDate.charAt(startDate.length-1) === ' '){
-                    startDate = startDate.slice(0, -1);
-                }
+                startDate = startDate.slice(0, -year.toString().length);
+                startDate = RemoveSpaces(startDate);
             }
             if((months.get(startDate.split(' ')[1])! < dateObj.getMonth()+1) || (months.get(startDate.split(' ')[1])! === dateObj.getMonth()+1 && Number(startDate.split(' ')[0]) < dateObj.getDate())){
                 year = dateObj.getFullYear() + 1;
             }
-            const finalStartDate = new Date(year, months.get(startDate.split(' ')[1])!, Number(startDate.split(' ')[0]), Number(startTime.split(':')[0]), Number(startTime.split(':')[1])).getTime();
 
-            let endDay:string|undefined = '';
-            let endDate:string|undefined = '';
-            if (splitString[1] !== '' && splitString.length === 2){
-                splitDate = splitString![1].split(',');
-                if(splitDate[0].charAt(0) === ' '){
-                    splitDate[0] = splitDate[0].slice(1, splitDate.length);
+            const dayRes = GetDay(startDate);
+            let startDay = dayRes.day;
+            startDate = dayRes.str;
+
+            const startMonth = months.get(startDate)! === undefined? -1 : months.get(startDate)!;
+
+            //Second half
+            let endHour = -1;
+            let endMin = -1;
+            let endDay = -1;
+            let endMonth = -1;
+            if(splitDate.length === 2){
+                splitString[1] = RemoveSpaces(splitString[1]);
+
+                const res = GetTime(splitString[1]);
+                endHour = res.hour;
+                endMin = res.min;
+                splitString[1] = res.str;
+
+                splitString[1] = RemoveChar(splitString[1], ',');
+
+                let splitDate = splitString![0].split(',');
+                for (const i in splitDate) splitDate[i] = RemoveSpaces(splitDate[i]);
+                
+                const yearRegex = new RegExp(/([0-9]){4}/);
+                let endDate = splitDate[splitDate.length - 1];
+                let regResult = yearRegex.exec(endDate);
+                if (regResult !== null){
+                    endDate = endDate.slice(0, -year.toString().length);
+                    endDate = RemoveSpaces(endDate);
                 }
-                console.log(splitDate);
-                endDay = splitDate.length === 2? weekDays.get(splitDate[0]) : '';
-                endDate = splitDate[splitDate.length - 1];
-                if(endDate.charAt(0) === ' '){
-                    endDate = endDate.slice(1, startDate.length);
-                }
-                const finalEndDate = new Date(year, months.get(startDate.split(' ')[1])!, Number(startDate.split(' ')[0]), Number(startTime.split(':')[0]), Number(startTime.split(':')[1])).getTime();
+
+                const dayRes = GetDay(endDate);
+                endDay = dayRes.day;
+                endDate = dayRes.str;
+
+                endMonth = months.get(endDate)! === undefined? -1 : months.get(endDate)!;
+            }
+        
+            //Final
+            console.log('Start: ' + startDay + '-' + startMonth + '-' + year + ' ' + startHour + ':' + startMin + ' ' + timezone);
+            console.log('End: ' + endDay + '-' + endMonth + '-' + year + ' ' + endHour + ':' + endMin + ' ' + timezone);
+
+            const finalStartDate = new Date(year, startMonth-1, startDay, startHour, startMin);
+            let finalEndDate = 0;
+            if(splitDate.length === 2){
+                const finalEndDate = 1;
             }
 
             const date = {
-                year: year,
-                startDate: finalStartDate,
-                endDate: endDate,
-                startDay: startDay,
-                endDay: endDay,
-                startTime: startTime,
-                endTime: endTime,
+                start: finalStartDate,
+                end: finalEndDate,
                 timezone: timezone,
                 when: await evnt.locator('.yZX6Sd').textContent(),
             }
+            //console.log(date);
 
             //Location handling
             const lineOne = await evnt.locator('.n3VjZe').textContent();
@@ -152,7 +212,7 @@ const crawler = new PlaywrightCrawler({
             const linkLocators = await evnt.locator('div[jsname="CzizI"]').locator('.SKIyM').all();
             for (const lnk of linkLocators) {
                 const link = {
-                    name: await lnk.locator('.NLMF7b span').textContent(),
+                    name: await lnk.locator('.NLMF7b span').first().textContent(),
                     url: await lnk.getAttribute('href'),
                 }
                 links.push(link);
@@ -168,7 +228,7 @@ const crawler = new PlaywrightCrawler({
                 links: links,
             }
 
-            console.log(results);
+            //console.log(results);
         }
     },
     headless: false,
