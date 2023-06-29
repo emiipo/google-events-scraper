@@ -2,6 +2,7 @@ import { PlaywrightCrawler, playwrightUtils } from 'crawlee';
 
 const timezones = ['UTC', 'ANAT', 'SBT', 'AEST', 'JST', 'CST', 'WIB', 'BST', 'UZT', 'GST', 'EEST', 'CEST', 'BST', 'GMT', 'CVT', 'WGST', 'ART', 'EDT', 'CDT', 'CST', 'PDT', 'AKDT', 'HDT', 'HST', 'NUT', 'AoE', 'LINT', 'TOT', 'LHST', 'ACST', 'MMT', 'IST', 'AFT', 'IRST', 'NDT', 'MART', 'CHAST', 'ACWST', 'NPT'];
 const months = new Map<string, number>([['Jan',1], ['Feb',2], ['Mar',3], ['Apr',4], ['May',5], ['Jun',6], ['Jul',7], ['Aug',8], ['Sep',9], ['Oct', 10], ['Nov', 11], ['Dec', 12]]);
+const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 function RemoveChar(str:string, char:string, first?:boolean):string {
     let index = str.length-1;
@@ -64,6 +65,16 @@ function GetDay(str:string):{day:number, str:string} {
     };
 }
 
+function RemoveWeekDays(str:string):string {
+    for(const day of weekDays){
+        if(str.includes(day)){
+            str = str.slice(day.length);
+            str = RemoveSpaces(str);
+        }
+    }
+    return str;
+}
+
 const crawler = new PlaywrightCrawler({
     preNavigationHooks: [
         async (crawlingContext) => {
@@ -117,7 +128,7 @@ const crawler = new PlaywrightCrawler({
             //First half
             splitString[0] = RemoveSpaces(splitString[0]);
 
-            const timeRes = GetTime(splitString[0]);
+            let timeRes = GetTime(splitString[0]);
             let startHour = timeRes.hour;
             let startMin = timeRes.min;
             splitString[0] = timeRes.str;
@@ -140,7 +151,9 @@ const crawler = new PlaywrightCrawler({
                 year = dateObj.getFullYear() + 1;
             }
 
-            const dayRes = GetDay(startDate);
+            startDate = RemoveWeekDays(startDate);
+
+            let dayRes = GetDay(startDate);
             let startDay = dayRes.day;
             startDate = dayRes.str;
 
@@ -151,17 +164,17 @@ const crawler = new PlaywrightCrawler({
             let endMin = -1;
             let endDay = -1;
             let endMonth = -1;
-            if(splitDate.length === 2){
+            if(splitString.length === 2){
                 splitString[1] = RemoveSpaces(splitString[1]);
 
-                const res = GetTime(splitString[1]);
-                endHour = res.hour;
-                endMin = res.min;
-                splitString[1] = res.str;
+                timeRes = GetTime(splitString[1]);
+                endHour = timeRes.hour;
+                endMin = timeRes.min;
+                splitString[1] = timeRes.str;
 
                 splitString[1] = RemoveChar(splitString[1], ',');
 
-                let splitDate = splitString![0].split(',');
+                splitDate = splitString![1].split(',');
                 for (const i in splitDate) splitDate[i] = RemoveSpaces(splitDate[i]);
                 
                 const yearRegex = new RegExp(/([0-9]){4}/);
@@ -172,7 +185,9 @@ const crawler = new PlaywrightCrawler({
                     endDate = RemoveSpaces(endDate);
                 }
 
-                const dayRes = GetDay(endDate);
+                endDate = RemoveWeekDays(endDate);
+                
+                dayRes = GetDay(endDate);
                 endDay = dayRes.day;
                 endDate = dayRes.str;
 
@@ -180,13 +195,16 @@ const crawler = new PlaywrightCrawler({
             }
         
             //Final
-            console.log('Start: ' + startDay + '-' + startMonth + '-' + year + ' ' + startHour + ':' + startMin + ' ' + timezone);
-            console.log('End: ' + endDay + '-' + endMonth + '-' + year + ' ' + endHour + ':' + endMin + ' ' + timezone);
-
-            const finalStartDate = new Date(year, startMonth-1, startDay, startHour, startMin);
-            let finalEndDate = 0;
-            if(splitDate.length === 2){
-                const finalEndDate = 1;
+            let finalStartDate:number|Date = 0;
+            let finalEndDate:number|Date = 0;
+            if(splitString.length === 2){
+                
+            } else {
+                if (startHour === -1) startHour = 0;
+                if (startMin === -1) startMin = 0;
+                console.log(startHour);
+                finalStartDate = new Date(year, startMonth-1, startDay, startHour, startMin);
+                console.log(finalStartDate.getHours());
             }
 
             const date = {
@@ -195,7 +213,7 @@ const crawler = new PlaywrightCrawler({
                 timezone: timezone,
                 when: await evnt.locator('.yZX6Sd').textContent(),
             }
-            //console.log(date);
+            console.log(date);
 
             //Location handling
             const lineOne = await evnt.locator('.n3VjZe').textContent();
@@ -228,10 +246,9 @@ const crawler = new PlaywrightCrawler({
                 links: links,
             }
 
-            //console.log(results);
+            console.log(results);
         }
     },
-    headless: false,
 });
 
-await crawler.run(['https://www.google.com/search?q=google+events&ibp=htl;events']);
+await crawler.run(['https://www.google.com/search?q=Splendour+in+the+grass&ibp=htl;events']);
