@@ -62,11 +62,7 @@ const crawler = new PlaywrightCrawler({
                 description: desc,
                 imageUrl: await evnt.locator('div[jsname="s2gQvd"] img[src]').first().getAttribute('src'),
                 date: await evnt.locator('.Gkoz3').textContent(),
-                location: {
-                    addressMain: await evnt.locator('.n3VjZe').textContent(),
-                    addressSecondary: await evnt.locator('.U6txu').textContent(),
-                    mapUrl: location,
-                },
+                location: location,
                 links: links,
             }
 
