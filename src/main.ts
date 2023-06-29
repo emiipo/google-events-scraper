@@ -1,5 +1,7 @@
 import { PlaywrightCrawler, playwrightUtils } from 'crawlee';
 
+const timezones = ['UTC', 'ANAT', 'SBT', 'AEST', 'JST', 'CST', 'WIB', 'BST', 'UZT', 'GST', 'EEST', 'CEST', 'BST', 'GMT', 'CVT', 'WGST', 'ART', 'EDT', 'CDT', 'CST', 'PDT', 'AKDT', 'HDT', 'HST', 'NUT', 'AoE', 'LINT', 'TOT', 'LHST', 'ACST', 'MMT', 'IST', 'AFT', 'IRST', 'NDT', 'MART', 'CHAST', 'ACWST', 'NPT'];
+
 const crawler = new PlaywrightCrawler({
     preNavigationHooks: [
         async (crawlingContext) => {
@@ -35,6 +37,21 @@ const crawler = new PlaywrightCrawler({
                 desc = await descLocator.textContent();
             }
 
+            //Date & time handling
+            let dateString = await evnt.locator('.Gkoz3').textContent();
+            let timezone = '';
+            for(const zone of timezones){
+                if(dateString?.includes(zone)){
+                    timezone = dateString.substring(dateString.indexOf(zone));
+                    dateString = dateString.slice(0, -timezone.length-1);
+                }
+            }
+            const date = {
+                date: dateString,
+                timezone: timezone,
+                when: await evnt.locator('.yZX6Sd').textContent(),
+            }
+
             //Location handling
             const lineOne = await evnt.locator('.n3VjZe').textContent();
             const lineTwo = await evnt.locator('.U6txu').textContent();
@@ -61,7 +78,7 @@ const crawler = new PlaywrightCrawler({
                 name: await evnt.locator('div[jsname="r4nke"]').textContent(),
                 description: desc,
                 imageUrl: await evnt.locator('div[jsname="s2gQvd"] img[src]').first().getAttribute('src'),
-                date: await evnt.locator('.Gkoz3').textContent(),
+                date: date,
                 location: location,
                 links: links,
             }
