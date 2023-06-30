@@ -288,4 +288,4 @@ const crawler = new PlaywrightCrawler({
     },
 });
 
-await crawler.run(['https://www.google.com/search?q=Splendour+in+the+grass&ibp=htl;events']);
+await crawler.run(['https://www.google.com/search?q=google+events&ibp=htl;events']);
