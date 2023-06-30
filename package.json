@@ -1,8 +1,8 @@
 {
-    "name": "google-events",
-    "version": "0.0.1",
+    "name": "google-events-scraper",
+    "version": "1.0.0",
     "type": "module",
-    "description": "This is an example of a Crawlee project.",
+    "description": "Scraper to gather data from google events using Crawlee.",
     "dependencies": {
         "crawlee": "^3.0.0",
         "moment": "^2.29.4",
@@ -21,6 +21,6 @@
         "build": "tsc",
         "test": "echo \"Error: oops, the actor has no tests yet, sad!\" && exit 1"
     },
-    "author": "It's not you it's me",
+    "author": "emiipo",
     "license": "ISC"
 }
