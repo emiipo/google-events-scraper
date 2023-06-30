@@ -141,13 +141,16 @@ const crawler = new PlaywrightCrawler({
             const dateObj = new Date();
             let dateString = await evnt.locator('.Gkoz3').first().textContent();
 
+            //Currently one letter time zones are an issue as they tend to be detected in regular words
             let timezone = '';
             for(const zone of timezones){
                 if(dateString?.includes(zone)){
                     timezone = dateString.substring(dateString.indexOf(zone));
                     dateString = dateString.slice(0, -timezone.length);
+                    break;
                 }
             }
+
             dateString = RemoveSpaces(dateString!);
 
             let splitString = dateString!.split('–');
