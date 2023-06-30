@@ -1,7 +1,8 @@
 import { PlaywrightCrawler, playwrightUtils } from 'crawlee';
+import moment from 'moment';
 
 const timezones = ['UTC', 'ANAT', 'SBT', 'AEST', 'JST', 'CST', 'WIB', 'BST', 'UZT', 'GST', 'EEST', 'CEST', 'BST', 'GMT', 'CVT', 'WGST', 'ART', 'EDT', 'CDT', 'CST', 'PDT', 'AKDT', 'HDT', 'HST', 'NUT', 'AoE', 'LINT', 'TOT', 'LHST', 'ACST', 'MMT', 'IST', 'AFT', 'IRST', 'NDT', 'MART', 'CHAST', 'ACWST', 'NPT'];
-const months = new Map<string, number>([['Jan',1], ['Feb',2], ['Mar',3], ['Apr',4], ['May',5], ['Jun',6], ['Jul',7], ['Aug',8], ['Sep',9], ['Oct', 10], ['Nov', 11], ['Dec', 12]]);
+const months = new Map<string, number>([['Jan',1], ['Feb',2], ['Mar',3], ['Apr',4], ['May',5], ['Jun',6], ['Jul',7], ['Aug',8], ['Sept',9], ['Oct', 10], ['Nov', 11], ['Dec', 12]]);
 const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 function RemoveChar(str:string, char:string, first?:boolean):string {
@@ -75,6 +76,22 @@ function RemoveWeekDays(str:string):string {
     return str;
 }
 
+function CheckIfValid(start:number, end:number, num?:number):{start:number, end:number} {
+    if(start === -1 && end !== -1){
+        start = end;
+    } else if (start !== -1 && end === -1){
+        end = start;
+    } else if (start === -1 && end === -1){
+        start = num? num : 0;
+        end = num? num : 0;
+    }
+
+    return {
+        start: start,
+        end: end,
+    }
+}
+
 const crawler = new PlaywrightCrawler({
     preNavigationHooks: [
         async (crawlingContext) => {
@@ -126,11 +143,15 @@ const crawler = new PlaywrightCrawler({
 
             let splitString = dateString!.split('–');
             //First half
+            let startHour = -1;
+            let startMin = -1;
+            let startDay = -1;
+            let startMonth = -1;
             splitString[0] = RemoveSpaces(splitString[0]);
 
             let timeRes = GetTime(splitString[0]);
-            let startHour = timeRes.hour;
-            let startMin = timeRes.min;
+            startHour = timeRes.hour;
+            startMin = timeRes.min;
             splitString[0] = timeRes.str;
 
             splitString[0] = RemoveChar(splitString[0], ',');
@@ -154,10 +175,10 @@ const crawler = new PlaywrightCrawler({
             startDate = RemoveWeekDays(startDate);
 
             let dayRes = GetDay(startDate);
-            let startDay = dayRes.day;
+            startDay = dayRes.day;
             startDate = dayRes.str;
 
-            const startMonth = months.get(startDate)! === undefined? -1 : months.get(startDate)!;
+            startMonth = months.get(startDate)! === undefined? -1 : months.get(startDate)!;
 
             //Second half
             let endHour = -1;
@@ -195,16 +216,33 @@ const crawler = new PlaywrightCrawler({
             }
         
             //Final
-            let finalStartDate:number|Date = 0;
-            let finalEndDate:number|Date = 0;
-            if(splitString.length === 2){
+            let finalStartDate = 0;
+            let finalEndDate = 0;
+            if (splitString.length === 2){
+                let checkRes = CheckIfValid(startHour, endHour);
+                startHour = checkRes.start;
+                endHour = checkRes.end;
                 
+                checkRes = CheckIfValid(startMin, endMin);
+                startMin = checkRes.start;
+                endMin = checkRes.end;
+
+                checkRes = CheckIfValid(startDay, endDay, 1);
+                startDay = checkRes.start;
+                endDay = checkRes.end;
+
+                checkRes = CheckIfValid(startMonth, endMonth);
+                startMonth = checkRes.start;
+                endMonth = checkRes.end;
+
+                finalStartDate = moment.utc([year, startMonth-1, startDay, startHour, startMin]).unix();;
+                finalEndDate = moment.utc([year, endMonth-1, endDay, endHour, endMin]).unix();;
             } else {
                 if (startHour === -1) startHour = 0;
                 if (startMin === -1) startMin = 0;
-                console.log(startHour);
-                finalStartDate = new Date(year, startMonth-1, startDay, startHour, startMin);
-                console.log(finalStartDate.getHours());
+                if (startDay === -1) startDay = 1;
+                if (startMonth === -1) startMonth = 0;
+                finalStartDate = moment.utc([year, startMonth-1, startDay, startHour, startMin]).unix();;
             }
 
             const date = {
@@ -213,7 +251,6 @@ const crawler = new PlaywrightCrawler({
                 timezone: timezone,
                 when: await evnt.locator('.yZX6Sd').textContent(),
             }
-            console.log(date);
 
             //Location handling
             const lineOne = await evnt.locator('.n3VjZe').textContent();
