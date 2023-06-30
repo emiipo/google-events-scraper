@@ -117,20 +117,29 @@ const crawler = new PlaywrightCrawler({
         for(const event of events){
             console.log('--------------------');
             //Click on the event and load the data(this is mainly needed to get image URL's)
+            //Not sure why but sometimes it can't click an event because it claims it's waiting for it to be visible, but it is? leaving this comment as a reminder :)
             await event.click();
+            
             const id = await event.getAttribute('data-encoded-docid');
             const evnt = page.locator('div[data-encoded-docid="' + id + '"]');
 
             //Description handling just in case it doesn't have one
             let desc:string|null = '';
-            const descLocator = await evnt.locator('.PVlUWc');
+            const descLocator = await evnt.locator('.PVlUWc').first();
             if(await descLocator.count() > 0){
                 desc = await descLocator.textContent();
             }
 
+            //Image handling
+            let imageUrl:string|null = '';
+            const imageLocator = await evnt.locator('div[jsname="HiaYvf"]').first();
+            if( await imageLocator.count() > 0 ) {
+                imageUrl = await imageLocator.locator('img[src]').getAttribute('src');
+            }
+
             //Date & time handling
             const dateObj = new Date();
-            let dateString = await evnt.locator('.Gkoz3').textContent();
+            let dateString = await evnt.locator('.Gkoz3').first().textContent();
 
             let timezone = '';
             for(const zone of timezones){
@@ -249,13 +258,13 @@ const crawler = new PlaywrightCrawler({
                 start: finalStartDate,
                 end: finalEndDate,
                 timezone: timezone,
-                when: await evnt.locator('.yZX6Sd').textContent(),
+                when: await evnt.locator('.yZX6Sd').first().textContent(),
             }
 
             //Location handling
-            const lineOne = await evnt.locator('.n3VjZe').textContent();
-            const lineTwo = await evnt.locator('.U6txu').textContent();
-            const mapUrl = 'https://google.com' + await evnt.locator('.ozQmAd').getAttribute('data-url');
+            const lineOne = await evnt.locator('.n3VjZe').first().textContent();
+            const lineTwo = await evnt.locator('.U6txu').first().textContent();
+            const mapUrl = 'https://google.com' + await evnt.locator('.ozQmAd').first().getAttribute('data-url');
             const location = {
                 name: lineTwo === ''? '' : lineOne,
                 address: lineTwo === ''? lineOne : lineTwo,
@@ -264,7 +273,7 @@ const crawler = new PlaywrightCrawler({
 
             //Link handling
             let links = [];
-            const linkLocators = await evnt.locator('div[jsname="CzizI"]').locator('.SKIyM').all();
+            const linkLocators = await evnt.locator('div[jsname="CzizI"]').first().locator('.SKIyM').all();
             for (const lnk of linkLocators) {
                 const link = {
                     name: await lnk.locator('.NLMF7b span').first().textContent(),
@@ -275,9 +284,10 @@ const crawler = new PlaywrightCrawler({
 
             //Results
             const results = {
-                name: await evnt.locator('div[jsname="r4nke"]').textContent(),
+                name: await evnt.locator('div[jsname="r4nke"]').first().textContent(),
                 description: desc,
-                imageUrl: await evnt.locator('div[jsname="s2gQvd"] img[src]').first().getAttribute('src'),
+                imageUrl: imageUrl,
+                mapImageUrl: 'https://google.com' + await evnt.locator('div[jsname="i4ewOd"] img[src]').first().getAttribute('src'),
                 date: date,
                 location: location,
                 links: links,
@@ -286,6 +296,7 @@ const crawler = new PlaywrightCrawler({
             console.log(results);
         }
     },
+    headless: false,
 });
 
-await crawler.run(['https://www.google.com/search?q=google+events&ibp=htl;events']);
+await crawler.run(['https://www.google.com/search?q=events+vilnius&ibp=htl;events']);
