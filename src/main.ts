@@ -1,16 +1,23 @@
 import { PlaywrightCrawler, playwrightUtils } from 'crawlee';
 import moment from 'moment';
-import { RemoveSpaces, RemoveChar, GetTime, GetDay, RemoveWeekDays, CheckIfValid } from './utils';
+import { RemoveSpaces, RemoveChar, GetTime, GetDay, RemoveWeekDays, CheckIfValid } from './utils.js';
 
 const timezones = ['ACDT', 'ACST', 'ACT', 'ACWST', 'ADT', 'AEDT', 'AEST', 'AET', 'AFT', 'AKDT', 'AKST', 'ALMT', 'AMST', 'AMT', 'ANAST', 'ANAT', 'AQTT', 'ART', 'AST', 'AT', 'AWDT', 'AWST', 'AZOST', 'AZST', 'AZT', 'AoE', 'BNT', 'BOT', 'BRST', 'BRT', 'BST', 'BTT', 'CAST', 'CAT', 'CCT', 'CDT', 'CEST', 'CET', 'CHADT', 'CHAST', 'CHOST', 'CHOT', 'CHUT', 'CIDST', 'CIST', 'CKT', 'CLST', 'CLT', 'COT', 'CST', 'CT', 'CVT', 'CXT', 'ChST', 'DAVT', 'DDUT', 'EASST', 'EAST', 'EAT', 'ECT', 'EDT', 'EEST', 'EET', 'EGST', 'EGT', 'EST', 'ET', 'FET', 'FJST', 'FJT', 'FKST', 'FKT', 'FNT', 'GALT', 'GAMT', 'GET', 'GFT', 'GILT', 'GMT', 'GST', 'GYT', 'HDT', 'HKT', 'HOVST', 'HOVT', 'HST', 'ICT', 'IDT', 'IOT', 'IRDT', 'IRKST', 'IRKT', 'IRST', 'IST', 'JST', 'KGT', 'KOST', 'KRAST', 'KRAT', 'KST', 'KUYT', 'LHDT', 'LHST', 'LINT', 'MAGST', 'MAGT', 'MART', 'MAWT', 'MDT', 'MHT', 'MMT', 'MSD', 'MSK', 'MST', 'MT', 'MUT', 'MVT', 'MYT', 'NCT', 'NDT', 'NFDT', 'NFT', 'NOVST', 'NOVT', 'NPT', 'NRT', 'NST', 'NUT', 'NZDT', 'NZST', 'OMSST', 'OMST', 'ORAT', 'PDT', 'PET', 'PETST', 'PETT', 'PGT', 'PHOT', 'PHT', 'PKT', 'PMDT', 'PMST', 'PONT', 'PST', 'PT', 'PWT', 'PYST', 'PYT', 'QYZT', 'RET', 'ROTT', 'SAKT', 'SAMT', 'SAST', 'SBT', 'SCT', 'SGT', 'SRET', 'SRT', 'SST', 'SYOT', 'TAHT', 'TFT', 'TJT', 'TKT', 'TLT', 'TMT', 'TOST', 'TOT', 'TRT', 'TVT', 'ULAST', 'ULAT', 'UTC', 'UYST', 'UYT', 'UZT', 'VET', 'VLAST', 'VLAT', 'VOST', 'VUT', 'WAKT', 'WARST', 'WAST', 'WAT', 'WEST', 'WET', 'WFT', 'WGST', 'WGT', 'WIB', 'WIT', 'WITA', 'WST', 'WT', 'YAKST', 'YAKT', 'YAPT', 'YEKST', 'YEKT'];
 const oneLetterTimezones = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
 const months = new Map<string, number>([['Jan',1], ['Feb',2], ['Mar',3], ['Apr',4], ['May',5], ['Jun',6], ['Jul',7], ['Aug',8], ['Sept',9], ['Oct', 10], ['Nov', 11], ['Dec', 12]]);
 
-export class gEventsScraper {
-    async Scrape(query:string) {
+export default class gEventsScraper {
+    async Scrape(query:string, options?:{ today?:boolean, tomorrow?:boolean, thisWeek?:boolean, thisWeekend?:boolean, nextWeek?:boolean, nextMonth?:boolean}):Promise<any> {
         query = query.replace(' ', '+');
+        let when = '';
+        if(options?.today) when = '&htichips=date:today';
+        else if(options?.tomorrow) when = '&htichips=date:tomorrow';
+        else if(options?.thisWeek) when = '&htichips=date:week';
+        else if(options?.thisWeekend) when = '&htichips=date:weekend';
+        else if(options?.nextWeek) when = '&htichips=date:next_week';
+        else if(options?.nextMonth) when = '&htichips=date:next_month';
 
-        let allResults = [];
+        let allResults:any = [];
 
         const crawler = new PlaywrightCrawler({
             preNavigationHooks: [
@@ -223,20 +230,12 @@ export class gEventsScraper {
                         location: location,
                         links: links,
                     }
-        
                     allResults.push(results);
                 }
             },
-            headless: false,
         });
 
-        if(crawler.running){
-            await crawler.addRequests(['https://www.google.com/search?q=' + encodeURI(query) + '&ibp=htl;events']);
-        } else {
-            await crawler.run(['https://www.google.com/search?q=' + encodeURI(query) + '&ibp=htl;events']);
-        }
+        await crawler.run(['https://www.google.com/search?q=' + encodeURI(query) + '&ibp=htl;events#htivrt=events' + when]);
+        return allResults;
     }
 }
-
-const scrp = new gEventsScraper();
-scrp.Scrape('google events');
