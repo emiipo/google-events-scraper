@@ -117,7 +117,8 @@ const crawler = new PlaywrightCrawler({
         for(const event of events){
             console.log('--------------------');
             //Click on the event and load the data(this is mainly needed to get image URL's)
-            //Not sure why but sometimes it can't click an event because it claims it's waiting for it to be visible, but it is? leaving this comment as a reminder :)
+            //On a rare occasion an event will have a hidden duplicate, thus we just skip it if we can't see it (from what I've tested the next item will still be the correct one with the correct information)
+            if(!(await event.isVisible())) continue;
             await event.click();
             
             const id = await event.getAttribute('data-encoded-docid');
@@ -302,4 +303,4 @@ const crawler = new PlaywrightCrawler({
     headless: false,
 });
 
-await crawler.run(['https://www.google.com/search?q=events+vilnius&ibp=htl;events']);
+await crawler.run(['https://www.google.com/search?q=events&ibp=htl;events']);
