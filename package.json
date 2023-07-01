@@ -1,6 +1,6 @@
 {
     "name": "google-events-scraper",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "type": "module",
     "description": "Scraper to gather data from google events using Crawlee.",
     "exports": "./dist/main.ts",
@@ -14,7 +14,12 @@
     },
     "bugs": "https://github.com/emiipo/google-events-scraper/issues",
     "homepage": "https://emii.me",
-    "keywords": [ "google", "events", "scraper", "utility" ],
+    "keywords": [
+        "google",
+        "events",
+        "scraper",
+        "utility"
+    ],
     "dependencies": {
         "crawlee": "^3.0.0",
         "moment": "^2.29.4",
