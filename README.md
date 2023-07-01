@@ -12,31 +12,33 @@ Once installed it's simple as creating an object and using it
 import gEventsScraper from 'google-events-scraper';
 
 const scraper = new gEventsScraper();
-const results = scraper.Scrape('google events');
+const results = await scraper.Scrape('events new york');
 ```
 ## Date
 There are two ways you can specify the date of the event but keep in mind that sometimes it will still show events outside of that range due to google.
 
 You can specify it in the query:
 ```ts
-const results = scraper.Scrape('google events today'); //This seems to not work so well
-const results = scraper.Scrape('google events next week');
-const results = scraper.Scrape('google events december 2023');
+const results = await scraper.Scrape('events today'); //This seems to not work so well
+const results = await scraper.Scrape('events next week');
+const results = await scraper.Scrape('events december 2023');
 ```
 Or you can use the optional date parameters (this uses google's own way of checking the date but it's very limited, this example provides all the options):
 ```ts
-const results = scraper.Scrape('google events', { today:true });
-const results = scraper.Scrape('google events', { tomorrow:true });
-const results = scraper.Scrape('google events', { thisWeek:true });
-const results = scraper.Scrape('google events', { thisWeekend:true });
-const results = scraper.Scrape('google events', { nextWeek:true });
-const results = scraper.Scrape('google events', { nextMonth:true });
+const results = await scraper.Scrape('events canada', { today:true });
+const results = await scraper.Scrape('events canada', { tomorrow:true });
+const results = await scraper.Scrape('events canada', { thisWeek:true });
+const results = await scraper.Scrape('events canada', { thisWeekend:true });
+const results = await scraper.Scrape('events canada', { nextWeek:true });
+const results = await scraper.Scrape('events canada', { nextMonth:true });
 ```
 ## Results
 If by any chance you want the last results of the scraper you can use this function (make sure it has ran at least once):
 ```ts
 const results2 = scraper.GetResults();
 ```
+**IMPORTANT:** start & end time given is in the UTC timezone so when using Date objects for example make sure you always get it in UTC for example 'time.getUTCTime();'. otherwise it will use your local time zone and convert the time to your time zone displaying something completely incorrect. **BUT** just because you're using it in the UTC timezone does not mean the events time is acctually in UTC (I'm just using that timezone as a basis). If the scraper does find a timezone you can check it but sometimes you can't find it and most of the information has to be inferred from a string.
+
 The results you will recieve and some things to keep in mind:
 ```ts
 {
@@ -45,7 +47,7 @@ The results you will recieve and some things to keep in mind:
     imageUrl: 'https://image.url', //Has possibility of being empty
     mapImageUrl: 'https://map-image.url',
     date: { 
-        start: 1686841200, 
+        start: 1686841200,
         end: 1686909600, //Has possibility of being 0
         timezone: 'UTC', //Has possibility of being empty
         when: 'Today' }, //Has possibility of being empty
