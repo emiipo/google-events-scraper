@@ -10,7 +10,7 @@ export default class gEventsScraper {
     data = [];
 
     async Scrape(query:string, options?:{ today?:boolean, tomorrow?:boolean, thisWeek?:boolean, thisWeekend?:boolean, nextWeek?:boolean, nextMonth?:boolean}):Promise<any> {
-        query = query.replace(' ', '+');
+        query = query.split(' ').join('+');
         let when = '';
         if(options?.today) when = '&htichips=date:today';
         else if(options?.tomorrow) when = '&htichips=date:tomorrow';

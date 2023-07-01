@@ -1,6 +1,6 @@
 {
     "name": "google-events-scraper",
-    "version": "1.0.6",
+    "version": "1.0.7",
     "type": "module",
     "description": "Scraper to gather data from google events using Crawlee.",
     "exports": "./dist/main.js",
