@@ -246,5 +246,3 @@ export default class gEventsScraper {
         return this.data;
     }
 }
-
-module.exports = gEventsScraper;
