@@ -1,13 +1,14 @@
 {
     "name": "google-events-scraper",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "type": "module",
     "description": "Scraper to gather data from google events using Crawlee.",
-    "exports": "./dist/main.ts",
+    "exports": "./dist/main.js",
     "files": [
         "README.md",
         "dist/"
     ],
+    "types": "./dist/main.d.ts",
     "repository": {
         "type": "git",
         "url": "https://github.com/emiipo/google-events-scraper.git"
