@@ -2,11 +2,11 @@
     "name": "google-events-scraper",
     "version": "1.0.2",
     "type": "module",
-    "main": "src/index.ts",
     "description": "Scraper to gather data from google events using Crawlee.",
+    "exports": "./dist/main.ts",
     "files": [
         "README.md",
-        "src/"
+        "dist/"
     ],
     "repository": {
         "type": "git",
@@ -30,8 +30,7 @@
         "start": "npm run start:dev",
         "start:prod": "node dist/main.js",
         "start:dev": "ts-node-esm -T src/main.ts",
-        "build": "tsc",
-        "test": "echo \"Error: oops, the actor has no tests yet, sad!\" && exit 1"
+        "build": "tsc"
     },
     "author": "emiipo",
     "license": "ISC"
