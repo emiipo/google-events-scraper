@@ -65,6 +65,12 @@ export default class gEventsScraper {
                     if( await imageLocator.count() > 0 ) {
                         imageUrl = await imageLocator.locator('img[src]').getAttribute('src');
                     }
+
+                    let mapImageUrl:string|null = '';
+                    const mapImageLocator = await evnt.locator('div[jsname="i4ewOd"]').first();
+                    if( await mapImageLocator.count() > 0 ) {
+                        mapImageUrl = await mapImageLocator.locator('img[src]').getAttribute('src');
+                    }
         
                     //Date & time handling
                     const dateObj = new Date();
@@ -227,7 +233,7 @@ export default class gEventsScraper {
                         name: await evnt.locator('div[jsname="r4nke"]').first().textContent(),
                         description: desc,
                         imageUrl: imageUrl,
-                        mapImageUrl: 'https://google.com' + await evnt.locator('div[jsname="i4ewOd"] img[src]').first().getAttribute('src'),
+                        mapImageUrl: mapImageUrl,
                         date: date,
                         location: location,
                         links: links,
