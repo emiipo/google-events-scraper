@@ -69,7 +69,7 @@ export default class gEventsScraper {
                     let mapImageUrl:string|null = '';
                     const mapImageLocator = await evnt.locator('div[jsname="i4ewOd"]').first();
                     if( await mapImageLocator.count() > 0 ) {
-                        mapImageUrl = await mapImageLocator.locator('img[src]').getAttribute('src');
+                        mapImageUrl = 'https://google.com' + await mapImageLocator.locator('img[src]').getAttribute('src');
                     }
         
                     //Date & time handling
